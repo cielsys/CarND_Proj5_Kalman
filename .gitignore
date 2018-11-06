@@ -1,3 +1,13 @@
+# -*- mode: gitignore; -*-
+
+nohup.out
+
+junk*.*
+junk/
+[Tt]emp/
+[Tt]mp/
+[Bb]ackup
+
 # silly macOS
 .DS_Store
 

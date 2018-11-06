@@ -25,6 +25,9 @@ void KalmanFilter::Predict() {
   TODO:
     * predict the state
   */
+  x_ = F_ * x_;
+  MatrixXd Ft = F_.transpose();
+  P_ = F_ * P_ * Ft + Q_;
 }
 
 void KalmanFilter::Update(const VectorXd &z) {
@@ -32,11 +35,64 @@ void KalmanFilter::Update(const VectorXd &z) {
   TODO:
     * update the state by using Kalman Filter equations
   */
+  VectorXd z_pred = H_ * x_;
+  VectorXd y = z - z_pred;
+  MatrixXd Ht = H_.transpose();
+  MatrixXd S = H_ * P_ * Ht + R_;
+  MatrixXd Si = S.inverse();
+  MatrixXd PHt = P_ * Ht;
+  MatrixXd K = PHt * Si;
+
+  x_ = x_ + (K * y);
+  long x_size = x_.size();
+  MatrixXd I = MatrixXd::Identity(x_size, x_size);
+  P_ = (I - K * H_) * P_;
+}
+
+// Normalize an angle phi to the range -PI to PI
+double normalizeAngle(double angle){
+  while (angle < -M_PI){
+    angle += 2*M_PI;
+  }
+  while (angle > M_PI){
+    angle -= 2*M_PI;
+  }
+
+  return(angle);
 }
 
 void KalmanFilter::UpdateEKF(const VectorXd &z) {
   /**
-  TODO:
     * update the state by using Extended Kalman Filter equations
   */
+  float px=x_(0);
+  float py=x_(1);
+  float vx=x_(2);
+  float vy=x_(3);
+
+  // rho: polar distance
+  // phi: polar direction (rads)
+  // rho_dot: polar speed
+
+  float rho = sqrt(px*px + py*py);
+  //Prevent division by zero and update with small value if zero
+  rho = ((fabs(rho) < 0.0000) ? 0.0001 : rho);
+
+  float phi = atan2(py, px);
+  float rho_dot = (px*vx + py*vy) / rho;
+  VectorXd H_est(3);
+  H_est << rho, phi, rho_dot;
+
+  VectorXd y = z - H_est;
+  y(1) = normalizeAngle(y(1));
+  MatrixXd Ht = H_.transpose();
+  MatrixXd S_= H_* P_* Ht + R_;
+  MatrixXd Si = S_.inverse();
+  MatrixXd K = P_* Ht* Si;
+
+  x_ = x_ + (K * y);
+  long x_size = x_.size();
+  MatrixXd I = MatrixXd::Identity(x_size, x_size);
+  P_=(I-K * H_) * P_;
+
 }
