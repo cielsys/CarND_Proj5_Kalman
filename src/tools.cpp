@@ -15,22 +15,37 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
   TODO:
     * Calculate the RMSE here.
   */
-  int index;
-  VectorXd vecSumErrSqr = VectorXd(4);
-  vecSumErrSqr << 0,0,0,0;
+  VectorXd rmse(4);
+  rmse << 0,0,0,0;
 
-  for (index = 0; index < estimations.size(); index++){
-    VectorXd vecErr = estimations[index] - ground_truth[index];
-    VectorXd vecErrSqr = (vecErr.array() * vecErr.array());
-    vecSumErrSqr += vecErrSqr;
-
+  // check the validity of the following inputs:
+  //  * the estimation vector size should not be zero
+  //  * the estimation vector size should equal ground truth vector size
+  if(estimations.size() != ground_truth.size()
+     || estimations.size() == 0){
+    cout << "Invalid estimation or ground_truth data" << endl;
+    return rmse;
   }
 
-  vecSumErrSqr = vecSumErrSqr/estimations.size();
-  VectorXd rmse = vecSumErrSqr.array().sqrt();
+  //accumulate squared residuals
+  for(unsigned int i=0; i < estimations.size(); ++i){
 
-  cout << "rmse= " << rmse << endl;
-  return(rmse);
+    VectorXd residual = estimations[i] - ground_truth[i];
+
+    //coefficient-wise multiplication
+    residual = residual.array()*residual.array();
+    rmse += residual;
+  }
+
+  //calculate the mean
+  rmse = rmse/estimations.size();
+
+  //calculate the squared root
+
+  rmse = rmse.array().sqrt();
+
+  //return the result
+  return rmse;
 
 }
 
@@ -42,13 +57,13 @@ MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
 
   MatrixXd Hj(3,4);
   //recover state parameters
-  float px = x_state(0);
-  float py = x_state(1);
-  float vx = x_state(2);
-  float vy = x_state(3);
+  float pos_x = x_state(0);
+  float pos_y = x_state(1);
+  float vel_x = x_state(2);
+  float vel_y = x_state(3);
 
   //pre-compute a set of terms to avoid repeated calculation
-  float c1 = px*px+py*py;
+  float c1 = pos_x*pos_x + pos_y*pos_y;
   float c2 = sqrt(c1);
   float c3 = (c1*c2);
 
@@ -59,9 +74,9 @@ MatrixXd Tools::CalculateJacobian(const VectorXd& x_state) {
   }
 
   //compute the Jacobian matrix
-  Hj << (px/c2), (py/c2), 0, 0,
-    -(py/c1), (px/c1), 0, 0,
-    py*(vx*py - vy*px)/c3, px*(px*vy - py*vx)/c3, px/c2, py/c2;
+  Hj << (pos_x/c2), (pos_y/c2), 0, 0,
+    -(pos_y/c1), (pos_x/c1), 0, 0,
+    pos_y*(vel_x*pos_y - vel_y*pos_x)/c3, pos_x*(pos_x*vel_y - pos_y*vel_x)/c3, pos_x/c2, pos_y/c2;
 
   return Hj;
 }

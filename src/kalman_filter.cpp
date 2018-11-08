@@ -39,9 +39,8 @@ void KalmanFilter::Update(const VectorXd &z) {
   VectorXd y = z - z_pred;
   MatrixXd Ht = H_.transpose();
   MatrixXd S = H_ * P_ * Ht + R_;
-  MatrixXd Si = S.inverse();
   MatrixXd PHt = P_ * Ht;
-  MatrixXd K = PHt * Si;
+  MatrixXd K = PHt * S.inverse();
 
   x_ = x_ + (K * y);
   long x_size = x_.size();
@@ -65,34 +64,33 @@ void KalmanFilter::UpdateEKF(const VectorXd &z) {
   /**
     * update the state by using Extended Kalman Filter equations
   */
-  float px=x_(0);
-  float py=x_(1);
-  float vx=x_(2);
-  float vy=x_(3);
+  float pos_x=x_(0);
+  float pos_y=x_(1);
+  float vel_x=x_(2);
+  float vel_y=x_(3);
 
   // rho: polar distance
   // phi: polar direction (rads)
   // rho_dot: polar speed
 
-  float rho = sqrt(px*px + py*py);
-  //Prevent division by zero and update with small value if zero
+  float rho = sqrt(pos_x*pos_x + pos_y*pos_y);
+  //Avoid div by zero
   rho = ((fabs(rho) < 0.0000) ? 0.0001 : rho);
 
-  float phi = atan2(py, px);
-  float rho_dot = (px*vx + py*vy) / rho;
-  VectorXd H_est(3);
-  H_est << rho, phi, rho_dot;
+  float phi = atan2(pos_y, pos_x);
+  float rho_dot = (pos_x*vel_x + pos_y*vel_y) / rho;
+  VectorXd z_pred(3);
+  z_pred << rho, phi, rho_dot;
 
-  VectorXd y = z - H_est;
+  VectorXd y = z - z_pred;
   y(1) = normalizeAngle(y(1));
   MatrixXd Ht = H_.transpose();
-  MatrixXd S_= H_* P_* Ht + R_;
-  MatrixXd Si = S_.inverse();
-  MatrixXd K = P_* Ht* Si;
+  MatrixXd S = H_ * P_ *  Ht + R_;
+  MatrixXd K = P_ * Ht * S.inverse();
 
   x_ = x_ + (K * y);
   long x_size = x_.size();
   MatrixXd I = MatrixXd::Identity(x_size, x_size);
-  P_=(I-K * H_) * P_;
+  P_ = (I - K * H_) * P_;
 
 }

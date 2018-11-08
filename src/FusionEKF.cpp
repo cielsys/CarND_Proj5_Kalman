@@ -23,11 +23,13 @@ FusionEKF::FusionEKF() {
   Hj_ = MatrixXd(3, 4);
 
   //measurement covariance matrix - laser
-  R_laser_ << 0.0225, 0,
+  R_laser_ <<
+    0.0225, 0,
     0, 0.0225;
 
   //measurement covariance matrix - radar
-  R_radar_ << 0.09, 0, 0,
+  R_radar_ <<
+    0.09, 0, 0,
     0, 0.0009, 0,
     0, 0, 0.09;
 
@@ -36,23 +38,27 @@ FusionEKF::FusionEKF() {
     * Finish initializing the FusionEKF.
     * Set the process and measurement noises
   */
-  H_laser_ << 1, 0, 0, 0,
+  H_laser_ <<
+    1, 0, 0, 0,
     0, 1, 0, 0,
 
-  Hj_ <<  1, 1, 0, 0,
-          1, 1, 0, 0,
-          1, 1, 1, 1;
+  Hj_ <<
+    1, 1, 0, 0,
+    1, 1, 0, 0,
+    1, 1, 1, 1;
 
   //state covariance matrix P
   ekf_.P_ = MatrixXd(4, 4);
-  ekf_.P_ << 1, 0, 0, 0,
+  ekf_.P_ <<
+    1, 0, 0, 0,
     0, 1, 0, 0,
     0, 0, 1000, 0,
     0, 0, 0, 1000;
 
-  //the initial transition matrix F_
+  // transition matrix F
   ekf_.F_ = MatrixXd(4, 4);
-  ekf_.F_ << 1, 0, 1, 0,
+  ekf_.F_ <<
+    1, 0, 1, 0,
     0, 1, 0, 1,
     0, 0, 1, 0,
     0, 0, 0, 1;
@@ -133,7 +139,7 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   float dt = (measurement_pack.timestamp_ - previous_timestamp_) / 1000000.0;  //dt - expressed in seconds
   previous_timestamp_ = measurement_pack.timestamp_;
 
-  float dt_2 = dt * dt;
+  float dt_2 = dt   * dt;
   float dt_3 = dt_2 * dt;
   float dt_4 = dt_3 * dt;
 
@@ -141,18 +147,18 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
   ekf_.F_(0, 2) = dt;
   ekf_.F_(1, 3) = dt;
 
-  //acceleration noise
-  float noise_ax = 9;
-  float noise_ay = 9;
+  float accelNoise_x = 9;
+  float accelNoise_y = 9;
 
   //process covariance matrix Q
   ekf_.Q_ = MatrixXd(4, 4);
-  ekf_.Q_ << dt_4 / 4 * noise_ax, 0, dt_3 / 2 * noise_ax, 0,
-    0, dt_4 / 4 * noise_ay, 0, dt_3 / 2 * noise_ay,
-    dt_3 / 2 * noise_ax, 0, dt_2 * noise_ax, 0,
-    0, dt_3 / 2 * noise_ay, 0, dt_2 * noise_ay;
+  ekf_.Q_ <<
+    dt_4 / 4 * accelNoise_x, 0, dt_3 / 2 * accelNoise_x, 0,
+    0, dt_4 / 4 * accelNoise_y, 0, dt_3 / 2 * accelNoise_y,
+    dt_3 / 2 * accelNoise_x, 0, dt_2 * accelNoise_x, 0,
+    0, dt_3 / 2 * accelNoise_y, 0, dt_2 * accelNoise_y;
 
-  // only predict if time has elapsed
+  // if time has elapsed
   if (dt > 0.001) {
     ekf_.Predict();
   }

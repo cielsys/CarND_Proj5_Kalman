@@ -36,7 +36,7 @@ int main() {
   vector<VectorXd> estimations;
   vector<VectorXd> ground_truth;
 
-  h.onMessage(
+  auto cbMessage =
     [&fusionEKF, &tools, &estimations, &ground_truth](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                                                       uWS::OpCode opCode) {
         // "42" at the start of the message means there's a websocket message event.
@@ -148,7 +148,9 @@ int main() {
           }
         }
 
-    });
+    };
+
+  h.onMessage(cbMessage);
 
   // We don't need this since we're not using HTTP but if it's removed the program
   // doesn't compile :-(
